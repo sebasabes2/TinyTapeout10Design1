@@ -36,16 +36,17 @@ class VGA() extends Module {
   val vsync = (vcounter < (V_VISIBLE_AREA + V_FRONT_PORCH).U) || (vcounter >= (V_VISIBLE_AREA + V_FRONT_PORCH + V_SYNC_PULSE).U)
   val visible = (hcounter < H_VISIBLE_AREA.U) && (vcounter < V_VISIBLE_AREA.U)
 
-  val data = Wire(Vec(16, Bool()))
-  for (i <- 0 until 16) {
-    val r = Random.nextBoolean()
-    data(i) := r.B
-    println(r)
-  }
+  // val data = Wire(Vec(16, Bool()))
+  // for (i <- 0 until 16) {
+  //   val r = Random.nextBoolean()
+  //   data(i) := r.B
+  //   println(r)
+  // }
 
-  val index = vcounter(7,6) ## hcounter(7,6)
-  val current = data(index)
-  val color = current && (hcounter(9,8) === 0.U) && (vcounter(9,8) === 0.U) && visible
+  // val index = vcounter(7,6) ## hcounter(7,6)
+  // val current = data(index)
+  // val color = current && (hcounter(9,8) === 0.U) && (vcounter(9,8) === 0.U) && visible
+  val color = visible
   val r = color ## color ## color ## color
   val g = color ## color ## color ## color
   val b = color ## color ## color ## color
