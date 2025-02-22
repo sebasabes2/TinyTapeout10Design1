@@ -1,4 +1,5 @@
 import chisel3._
+import chisel3.util._
 
 /**
  * Example design in Chisel.
@@ -13,29 +14,25 @@ class ChiselTop() extends Module {
     val uio_oe = Output(UInt(8.W))    // IOs: Enable path (active high: 0=input, 1=output)
   })
 
-  // io.uio_out := 0.U
-  // // use bi-directionals as input
-  // io.uio_oe := 0.U
+  io.uio_out := 0.U
 
-  // val add = WireDefault(0.U(7.W))
-  // add := io.ui_in + io.uio_in
+  val MAX_COUNT = 12500000
+  val countReg = Reg(UInt(log2Up(MAX_COUNT).W))
+  when (io.ui_in(0)) {
+    when (countReg === MAX_COUNT.U) {
+      countReg := 0.U
+    } .otherwise {
+      countReg := countReg + 1.U
+    }
+  }
 
-  // // Blink with 1 Hz
-  // val cntReg = RegInit(0.U(32.W))
-  // val ledReg = RegInit(0.U(1.W))
-  // cntReg := cntReg + 1.U
-  // when (cntReg === 25000000.U) {
-  //   cntReg := 0.U
-  //   ledReg := ~ledReg
-  // }
-  // io.uo_out := ledReg ## add
-
-  // Modified:
+  val gol = Module(new GameOfLife())
+  gol.io.update := countReg === MAX_COUNT.U
 
   val vga = Module(new VGA())
-  io.uio_out := vga.io.output(15,8)
-  io.uo_out := vga.io.output(7,0)
-  // enable bidirectional output:
+  vga.io.data := gol.io.cells
+  io.uo_out := vga.io.output
+  // set bidirectional io to output:
   io.uio_oe := 0xff.U
 }
 

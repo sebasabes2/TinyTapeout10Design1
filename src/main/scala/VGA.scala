@@ -3,7 +3,8 @@ import scala.util.Random
 
 class VGA() extends Module {
   val io = IO(new Bundle {
-    val output = Output(UInt(16.W))
+    val data = Input(Vec(48, Bool()))
+    val output = Output(UInt(8.W))
   })
 
   val H_VISIBLE_AREA = 640
@@ -34,22 +35,16 @@ class VGA() extends Module {
 
   val hsync = (hcounter < (H_VISIBLE_AREA + H_FRONT_PORCH).U) || (hcounter >= (H_VISIBLE_AREA + H_FRONT_PORCH + H_SYNC_PULSE).U)
   val vsync = (vcounter < (V_VISIBLE_AREA + V_FRONT_PORCH).U) || (vcounter >= (V_VISIBLE_AREA + V_FRONT_PORCH + V_SYNC_PULSE).U)
-  val visible = (hcounter < H_VISIBLE_AREA.U) && (vcounter < V_VISIBLE_AREA.U)
+  val inFrame = (hcounter < H_VISIBLE_AREA.U) && (vcounter < V_VISIBLE_AREA.U)
 
-  val data = Wire(Vec(16, Bool()))
-  for (i <- 0 until 16) {
-    val r = Random.nextBoolean()
-    data(i) := r.B
-    println(r)
-  }
-
-  val index = vcounter(7,6) ## hcounter(7,6)
-  val current = data(index)
-  val color = current && (hcounter(9,8) === 0.U) && (vcounter(9,8) === 0.U) && visible
-  // val color = visible
-  val r = color ## color ## color ## color
-  val g = color ## color ## color ## color
-  val b = color ## color ## color ## color
-  val nc = false.B
-  io.output := nc ## nc ## vsync ## hsync ## g ## b ## r
+  val xi = (hcounter / 80.U)(2,0)
+  val yi = (vcounter / 80.U)(2,0)
+  val index = yi ## xi
+  print(xi, yi, index)
+  val current = io.data(index)
+  val color = current && inFrame
+  val r = color ## color
+  val g = color ## color
+  val b = color ## color
+  io.output := hsync ## b(0) ## g(0) ## r(0) ## vsync ## b(1) ## g(1) ## r(1)
 }

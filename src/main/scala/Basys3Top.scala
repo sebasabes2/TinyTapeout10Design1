@@ -11,10 +11,10 @@ class clk_wiz_0 extends BlackBox {
 
 class Basys3Top() extends Module {
   val io = IO(new Bundle {
-    // val ui_in = Input(UInt(8.W))      // Dedicated inputs
+    val ui_in = Input(UInt(8.W))      // Dedicated inputs
     val uo_out = Output(UInt(8.W))    // Dedicated outputs
     // val uio_in = Input(UInt(8.W))     // IOs: Input path
-    val uio_out = Output(UInt(8.W))   // IOs: Output path
+    // val uio_out = Output(UInt(8.W))   // IOs: Output path
     // val uio_oe = Output(UInt(8.W))    // IOs: Enable path (active high: 0=input, 1=output)
   })
 
@@ -23,10 +23,9 @@ class Basys3Top() extends Module {
   clkWiz.io.reset := false.B
 
   val chiselTop = withClock(clkWiz.io.clk_out) { Module(new ChiselTop()) }
-  chiselTop.io.ui_in := 0.U
+  chiselTop.io.ui_in := io.ui_in
   chiselTop.io.uio_in := 0.U
   io.uo_out := chiselTop.io.uo_out
-  io.uio_out := chiselTop.io.uio_out
 }
 
 object Basys3Top extends App {
