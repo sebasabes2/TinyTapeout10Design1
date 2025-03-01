@@ -21,5 +21,5 @@ class GameOfLife() extends Module {
   val yi = (io.pixel.y / 80.U)(2,0)
   val index = yi ## xi
   print(xi, yi, index)
-  io.color := cells(index)
+  io.color := cells(0)
 }
