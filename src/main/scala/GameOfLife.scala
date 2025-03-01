@@ -21,7 +21,12 @@ class CellMemory() extends Module {
 
 class GameOfLife() extends Module {
   val io = IO(new Bundle {
-    val update = Input(Bool())
+    // User Input
+    val tick = Input(Bool())
+    val set = Input(Bool())
+    val state = Input(Bool())
+    val coordinate = Input(UInt(6.W))
+    // VGA signals
     val pixel = new Pixel
     val color = Output(Bool())
   })
@@ -38,16 +43,24 @@ class GameOfLife() extends Module {
 
   // Finite State Machine
   object States extends ChiselEnum {
-    val reset, display, update = Value
+    val reset, display, update, input = Value
   }
   val state = RegInit(States.reset)
+  val xIndex = RegInit(0.U(3.W))
+  val yIndex = RegInit(0.U(3.W))
 
   switch (state) {
     is (States.reset) {
-      cellMem.io.address := 8.U
+      val index = yIndex ## xIndex
+      val nextIndex = index + 1.U
+      yIndex := nextIndex(5,3)
+      xIndex := nextIndex(2,0)
+      when (nextIndex === 48.U) {
+        state := States.display
+      }
+      cellMem.io.address := index
       cellMem.io.dataWrite := false.B
       cellMem.io.writeEnabled := true.B
-      state := States.display
     }
 
     is (States.display) {
@@ -62,6 +75,13 @@ class GameOfLife() extends Module {
       cellMem.io.address := 1.U
       cellMem.io.dataWrite := true.B
       cellMem.io.writeEnabled := true.B
+      state := States.input
+    }
+
+    is (States.input) {
+      cellMem.io.address := io.coordinate
+      cellMem.io.dataWrite := io.state
+      cellMem.io.writeEnabled := io.set
       state := States.display
     }
   }

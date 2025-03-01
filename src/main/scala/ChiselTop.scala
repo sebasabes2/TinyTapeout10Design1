@@ -13,28 +13,21 @@ class ChiselTop() extends Module {
     val uio_out = Output(UInt(8.W))   // IOs: Output path
     val uio_oe = Output(UInt(8.W))    // IOs: Enable path (active high: 0=input, 1=output)
   })
-
+  
+  // set bidirectional io to input:
+  io.uio_oe := 0.U
   io.uio_out := 0.U
 
-  val MAX_COUNT = 12500000
-  val countReg = Reg(UInt(log2Up(MAX_COUNT).W))
-  when (io.ui_in(0)) {
-    when (countReg === MAX_COUNT.U) {
-      countReg := 0.U
-    } .otherwise {
-      countReg := countReg + 1.U
-    }
-  }
-
   val gol = Module(new GameOfLife())
-  gol.io.update := countReg === MAX_COUNT.U
+  gol.io.coordinate := io.ui_in(5,0)
+  gol.io.state := io.ui_in(6)
+  gol.io.set := io.ui_in(7)
+  gol.io.tick := io.uio_in(0)
 
   val vga = Module(new VGA())
   gol.io.pixel := vga.io.pixel
   vga.io.color := gol.io.color
   io.uo_out := vga.io.output
-  // set bidirectional io to output:
-  io.uio_oe := 0xff.U
 }
 
 object ChiselTop extends App {
