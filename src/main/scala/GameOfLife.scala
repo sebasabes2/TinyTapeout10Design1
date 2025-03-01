@@ -36,6 +36,11 @@ class GameOfLife() extends Module {
   cellMem.io.dataWrite := DontCare
   cellMem.io.writeEnabled := false.B
 
+  val copyMem = Module(new CellMemory)
+  copyMem.io.address := DontCare
+  copyMem.io.dataWrite := DontCare
+  copyMem.io.writeEnabled := false.B
+
   val displayXIndex = (io.pixel.x / 80.U)(2,0)
   val displayYIndex = (io.pixel.y / 80.U)(2,0)
   val displayIndex = displayYIndex ## displayXIndex
@@ -43,11 +48,12 @@ class GameOfLife() extends Module {
 
   // Finite State Machine
   object States extends ChiselEnum {
-    val reset, display, update, input = Value
+    val reset, display, update, process, begincopy, copy, input = Value
   }
   val state = RegInit(States.reset)
   val xIndex = RegInit(0.U(3.W))
   val yIndex = RegInit(0.U(3.W))
+  val updateCounter = Reg(UInt(5.W))
 
   switch (state) {
     is (States.reset) {
@@ -72,10 +78,50 @@ class GameOfLife() extends Module {
     }
 
     is (States.update) {
-      cellMem.io.address := 1.U
-      cellMem.io.dataWrite := true.B
+      updateCounter := updateCounter + 1.U
+      when (updateCounter === 0.U && io.tick) {
+        xIndex := 0.U
+        yIndex := 0.U
+        cellMem.io.address := 0.U
+        state := States.process
+      } .otherwise {
+        state := States.input
+      }
+    }
+
+    is (States.process) {
+      val index = yIndex ## xIndex
+      val nextIndex = index + 1.U
+      yIndex := nextIndex(5,3)
+      xIndex := nextIndex(2,0)
+      when (nextIndex === 48.U) {
+        state := States.begincopy
+      }
+      cellMem.io.address := nextIndex
+      copyMem.io.address := index
+      copyMem.io.dataWrite := ~cellMem.io.dataRead
+      copyMem.io.writeEnabled := true.B
+    }
+
+    is (States.begincopy) {
+      xIndex := 0.U
+      yIndex := 0.U
+      copyMem.io.address := 0.U
+      state := States.copy
+    }
+
+    is (States.copy) {
+      val index = yIndex ## xIndex
+      val nextIndex = index + 1.U
+      yIndex := nextIndex(5,3)
+      xIndex := nextIndex(2,0)
+      when (nextIndex === 48.U) {
+        state := States.input
+      }
+      copyMem.io.address := nextIndex
+      cellMem.io.address := index
+      cellMem.io.dataWrite := copyMem.io.dataRead
       cellMem.io.writeEnabled := true.B
-      state := States.input
     }
 
     is (States.input) {
