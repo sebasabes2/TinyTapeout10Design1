@@ -30,7 +30,8 @@ class ChiselTop() extends Module {
   gol.io.update := countReg === MAX_COUNT.U
 
   val vga = Module(new VGA())
-  vga.io.data := gol.io.cells
+  gol.io.pixel := vga.io.pixel
+  vga.io.color := gol.io.color
   io.uo_out := vga.io.output
   // set bidirectional io to output:
   io.uio_oe := 0xff.U

@@ -4,7 +4,8 @@ import scala.util.Random
 class GameOfLife() extends Module {
   val io = IO(new Bundle {
     val update = Input(Bool())
-    val cells = Output(Vec(48, Bool()))
+    val pixel = new Pixel
+    val color = Output(Bool())
   })
 
   val cells = Reg(Vec (48, Bool()))
@@ -16,5 +17,9 @@ class GameOfLife() extends Module {
     }
   }
 
-  io.cells := cells
+  val xi = (io.pixel.x / 80.U)(2,0)
+  val yi = (io.pixel.y / 80.U)(2,0)
+  val index = yi ## xi
+  print(xi, yi, index)
+  io.color := cells(index)
 }

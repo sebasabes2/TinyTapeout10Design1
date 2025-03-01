@@ -1,9 +1,17 @@
 import chisel3._
 import scala.util.Random
 
+class Pixel extends Bundle {
+  val x = Input(UInt(10.W))
+  val y = Input(UInt(9.W))
+  val xValid = Input(Bool())
+  val yValid = Input(Bool())
+}
+
 class VGA() extends Module {
   val io = IO(new Bundle {
-    val data = Input(Vec(48, Bool()))
+    val pixel = Flipped(new Pixel)
+    val color = Input(Bool())
     val output = Output(UInt(8.W))
   })
 
@@ -35,14 +43,16 @@ class VGA() extends Module {
 
   val hsync = (hcounter < (H_VISIBLE_AREA + H_FRONT_PORCH).U) || (hcounter >= (H_VISIBLE_AREA + H_FRONT_PORCH + H_SYNC_PULSE).U)
   val vsync = (vcounter < (V_VISIBLE_AREA + V_FRONT_PORCH).U) || (vcounter >= (V_VISIBLE_AREA + V_FRONT_PORCH + V_SYNC_PULSE).U)
-  val inFrame = (hcounter < H_VISIBLE_AREA.U) && (vcounter < V_VISIBLE_AREA.U)
+  val pixelXValid = hcounter < H_VISIBLE_AREA.U
+  val pixelYValid = vcounter < V_VISIBLE_AREA.U
+  val inFrame = pixelXValid && pixelYValid
 
-  val xi = (hcounter / 80.U)(2,0)
-  val yi = (vcounter / 80.U)(2,0)
-  val index = yi ## xi
-  print(xi, yi, index)
-  val current = io.data(index)
-  val color = current && inFrame
+  io.pixel.x := hcounter
+  io.pixel.y := vcounter
+  io.pixel.xValid := pixelXValid
+  io.pixel.yValid := pixelYValid
+
+  val color = io.color && inFrame
   val r = color ## color
   val g = color ## color
   val b = color ## color
