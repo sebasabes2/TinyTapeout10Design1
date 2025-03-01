@@ -27,8 +27,8 @@ class VGA() extends Module {
   val V_BACK_PORCH = 33
   val V_WHOLE_FRAME = 525
 
-  val hcounter = RegInit(0.U(10.W))
-  val vcounter = RegInit(0.U(10.W))
+  val hcounter = Reg(UInt(10.W))
+  val vcounter = Reg(UInt(10.W))
 
   when (hcounter < (H_WHOLE_LINE - 1).U) {
     hcounter := hcounter + 1.U
@@ -52,9 +52,11 @@ class VGA() extends Module {
   io.pixel.xValid := pixelXValid
   io.pixel.yValid := pixelYValid
 
-  val color = io.color && inFrame
+  // Wait for input of color, which is 1 clock cycle delayed
+
+  val color = io.color && RegNext(inFrame)
   val r = color ## color
   val g = color ## color
   val b = color ## color
-  io.output := hsync ## b(0) ## g(0) ## r(0) ## vsync ## b(1) ## g(1) ## r(1)
+  io.output := RegNext(hsync) ## b(0) ## g(0) ## r(0) ## RegNext(vsync) ## b(1) ## g(1) ## r(1)
 }
